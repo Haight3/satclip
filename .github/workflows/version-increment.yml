@@ -43,29 +43,30 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=20 --max-line-length=140 --statistics --exclude resources
       - name: Increase Version
         run: |
-          # Extract the current version from bumpver.toml
-          CURRENT_VERSION=$(grep 'current_version' .bumpver.toml | awk -F'"' '{print $2}')
+          # Extract the current version from pyproject.toml
+          CURRENT_VERSION=$(sed -n 's/current_version = "\(.*\)"/\1/p' pyproject.toml | tr -d '[:space:]')
 
           # Extract year, month, and patch
           CURRENT_YEAR=$(echo "$CURRENT_VERSION" | cut -d'.' -f1)
           CURRENT_MONTH=$(echo "$CURRENT_VERSION" | cut -d'.' -f2)
-          CURRENT_PATCH=$(echo "$CURRENT_VERSION" | cut -d'.' -f3)
+
+          # Convert extracted values to integers
+          CURRENT_YEAR=$((CURRENT_YEAR))
+          CURRENT_MONTH=$((CURRENT_MONTH))
 
           # Get system date
           SYSTEM_YEAR=$(date +"%Y")
           SYSTEM_MONTH=$(date +"%-m")  # Removes leading zero (e.g., "03" -> "3")
 
           echo "Current Version: $CURRENT_VERSION"
-          echo "Current Year: $CURRENT_YEAR, Current Month: $CURRENT_MONTH, Current Patch: $CURRENT_PATCH"
+          echo "Current Year: $CURRENT_YEAR, Current Month: $CURRENT_MONTH"
           echo "System Year: $SYSTEM_YEAR, System Month: $SYSTEM_MONTH"
 
           # Check if we need to reset the version
           if [ "$SYSTEM_YEAR" -gt "$CURRENT_YEAR" ] || [ "$SYSTEM_MONTH" -gt "$CURRENT_MONTH" ]; then
-              # New Year or New Month detected, reset to YYYY.MM.0
               echo "Updating version to new month/year..."
               bumpver update --set-version "$SYSTEM_YEAR.$SYSTEM_MONTH.0"
           else
-              # Patch increment
               echo "Updating patch version..."
               bumpver update -p
           fi

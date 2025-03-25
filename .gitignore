@@ -1,4 +1,3 @@
-*.ckpt
 *.py[cod]
 __pycache__
 
