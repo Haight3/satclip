@@ -1,16 +1,10 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-from setuptools import setup
 import io
 from glob import glob
-from os.path import basename
-from os.path import dirname
-from os.path import join
-from os.path import splitext
+from os.path import basename, dirname, join, splitext
 
-
-from setuptools import find_packages
-
+from setuptools import find_packages, setup
 
 
 def read(*names, **kwargs):
@@ -20,7 +14,7 @@ def read(*names, **kwargs):
 
 setup(
     name='satclip',
-    version='2025.3.0',
+    version='2025.3.1',
     license='MIT',
     description='SatCLIP - A Global, General-Purpose Geographic Location Encoder from Microsoft',
     author='Ismail Baris',

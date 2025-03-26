@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+# pylint: disable=E1101,W0221,R0901,R0902,R0913,R0914,E1136,C0301,C0411,C0412
+"""
+Model
+=====
+*Created on 26 by bari_is*
+*Copyright (C) 2025*
+*For COPYING and LICENSE details, please refer to the LICENSE file*
+
+"""
+
+
 from collections import OrderedDict
 from typing import Tuple, Union
 
@@ -8,11 +20,7 @@ import torch.nn.functional as F
 from torch import nn
 from torchgeo.models import ResNet18_Weights, ResNet50_Weights, ViTSmall16_Weights
 
-from satclip.location_encoder import (
-    LocationEncoder,
-    get_neural_network,
-    get_positional_encoding,
-)
+from satclip.location_encoder import LocationEncoder, get_neural_network, get_positional_encoding
 
 
 class Bottleneck(nn.Module):
@@ -77,13 +85,9 @@ class Bottleneck(nn.Module):
 
 
 class AttentionPool2d(nn.Module):
-    def __init__(
-        self, spacial_dim: int, embed_dim: int, num_heads: int, output_dim: int = None
-    ):
+    def __init__(self, spacial_dim: int, embed_dim: int, num_heads: int, output_dim: int = None):
         super().__init__()
-        self.positional_embedding = nn.Parameter(
-            torch.randn(spacial_dim**2 + 1, embed_dim) / embed_dim**0.5
-        )
+        self.positional_embedding = nn.Parameter(torch.randn(spacial_dim**2 + 1, embed_dim) / embed_dim**0.5)
         self.k_proj = nn.Linear(embed_dim, embed_dim)
         self.q_proj = nn.Linear(embed_dim, embed_dim)
         self.v_proj = nn.Linear(embed_dim, embed_dim)
@@ -104,9 +108,7 @@ class AttentionPool2d(nn.Module):
             k_proj_weight=self.k_proj.weight,
             v_proj_weight=self.v_proj.weight,
             in_proj_weight=None,
-            in_proj_bias=torch.cat(
-                [self.q_proj.bias, self.k_proj.bias, self.v_proj.bias]
-            ),
+            in_proj_bias=torch.cat([self.q_proj.bias, self.k_proj.bias, self.v_proj.bias]),
             bias_k=None,
             bias_v=None,
             add_zero_attn=False,
@@ -128,22 +130,16 @@ class ModifiedResNet(nn.Module):
     - The final pooling layer is a QKV attention instead of an average pool
     """
 
-    def __init__(
-        self, layers, output_dim, heads, input_resolution=224, width=64, in_channels=3
-    ):
+    def __init__(self, layers, output_dim, heads, input_resolution=224, width=64, in_channels=3):
         super().__init__()
         self.output_dim = output_dim
         self.input_resolution = input_resolution
 
         # the 3-layer stem
-        self.conv1 = nn.Conv2d(
-            in_channels, width // 2, kernel_size=3, stride=2, padding=1, bias=False
-        )
+        self.conv1 = nn.Conv2d(in_channels, width // 2, kernel_size=3, stride=2, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(width // 2)
         self.relu1 = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(
-            width // 2, width // 2, kernel_size=3, padding=1, bias=False
-        )
+        self.conv2 = nn.Conv2d(width // 2, width // 2, kernel_size=3, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(width // 2)
         self.relu2 = nn.ReLU(inplace=True)
         self.conv3 = nn.Conv2d(width // 2, width, kernel_size=3, padding=1, bias=False)
@@ -159,9 +155,7 @@ class ModifiedResNet(nn.Module):
         self.layer4 = self._make_layer(width * 8, layers[3], stride=2)
 
         embed_dim = width * 32  # the ResNet feature dimension
-        self.attnpool = AttentionPool2d(
-            input_resolution // 32, embed_dim, heads, output_dim
-        )
+        self.attnpool = AttentionPool2d(input_resolution // 32, embed_dim, heads, output_dim)
 
     def _make_layer(self, planes, blocks, stride=1):
         layers = [Bottleneck(self._inplanes, planes, stride)]
@@ -224,11 +218,7 @@ class ResidualAttentionBlock(nn.Module):
         self.attn_mask = attn_mask
 
     def attention(self, x: torch.Tensor):
-        self.attn_mask = (
-            self.attn_mask.to(dtype=x.dtype, device=x.device)
-            if self.attn_mask is not None
-            else None
-        )
+        self.attn_mask = self.attn_mask.to(dtype=x.dtype, device=x.device) if self.attn_mask is not None else None
         return self.attn(x, x, x, need_weights=False, attn_mask=self.attn_mask)[0]
 
     def forward(self, x: torch.Tensor):
@@ -238,15 +228,11 @@ class ResidualAttentionBlock(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(
-        self, width: int, layers: int, heads: int, attn_mask: torch.Tensor = None
-    ):
+    def __init__(self, width: int, layers: int, heads: int, attn_mask: torch.Tensor = None):
         super().__init__()
         self.width = width
         self.layers = layers
-        self.resblocks = nn.Sequential(
-            *[ResidualAttentionBlock(width, heads, attn_mask) for _ in range(layers)]
-        )
+        self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask) for _ in range(layers)])
 
     def forward(self, x: torch.Tensor):
         return self.resblocks(x)
@@ -276,9 +262,7 @@ class VisionTransformer(nn.Module):
 
         scale = width**-0.5
         self.class_embedding = nn.Parameter(scale * torch.randn(width))
-        self.positional_embedding = nn.Parameter(
-            scale * torch.randn((input_resolution // patch_size) ** 2 + 1, width)
-        )
+        self.positional_embedding = nn.Parameter(scale * torch.randn((input_resolution // patch_size) ** 2 + 1, width))
         self.ln_pre = LayerNorm(width)
 
         self.transformer = Transformer(width, layers, heads)
@@ -292,10 +276,7 @@ class VisionTransformer(nn.Module):
         x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
         x = torch.cat(
             [
-                self.class_embedding.to(x.dtype)
-                + torch.zeros(
-                    x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device
-                ),
+                self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device),
                 x,
             ],
             dim=1,
@@ -358,12 +339,8 @@ class SatCLIP(nn.Module):
             print("using pretrained moco resnet18")
             weights = ResNet18_Weights.SENTINEL2_ALL_MOCO
             in_chans = weights.meta["in_chans"]
-            self.visual = timm.create_model(
-                "resnet18", in_chans=in_chans, num_classes=embed_dim
-            )
-            self.visual.load_state_dict(
-                weights.get_state_dict(progress=True), strict=False
-            )
+            self.visual = timm.create_model("resnet18", in_chans=in_chans, num_classes=embed_dim)
+            self.visual.load_state_dict(weights.get_state_dict(progress=True), strict=False)
             self.visual.requires_grad_(False)
             self.visual.fc.requires_grad_(True)
 
@@ -371,12 +348,8 @@ class SatCLIP(nn.Module):
             print("using pretrained moco resnet50")
             weights = ResNet50_Weights.SENTINEL2_ALL_MOCO
             in_chans = weights.meta["in_chans"]
-            self.visual = timm.create_model(
-                "resnet50", in_chans=in_chans, num_classes=embed_dim
-            )
-            self.visual.load_state_dict(
-                weights.get_state_dict(progress=True), strict=False
-            )
+            self.visual = timm.create_model("resnet50", in_chans=in_chans, num_classes=embed_dim)
+            self.visual.load_state_dict(weights.get_state_dict(progress=True), strict=False)
             self.visual.requires_grad_(False)
             self.visual.fc.requires_grad_(True)
 
@@ -384,12 +357,8 @@ class SatCLIP(nn.Module):
             print("using pretrained moco vit16")
             weights = ViTSmall16_Weights.SENTINEL2_ALL_MOCO
             in_chans = weights.meta["in_chans"]
-            self.visual = timm.create_model(
-                "vit_small_patch16_224", in_chans=in_chans, num_classes=embed_dim
-            )
-            self.visual.load_state_dict(
-                weights.get_state_dict(progress=True), strict=False
-            )
+            self.visual = timm.create_model("vit_small_patch16_224", in_chans=in_chans, num_classes=embed_dim)
+            self.visual.load_state_dict(weights.get_state_dict(progress=True), strict=False)
             self.visual.requires_grad_(False)
             self.visual.head.requires_grad_(True)
 
@@ -465,9 +434,7 @@ class SatCLIP(nn.Module):
         location_features = self.encode_location(coords).float()
         # normalized features
         image_features = image_features / image_features.norm(dim=1, keepdim=True)
-        location_features = location_features / location_features.norm(
-            dim=1, keepdim=True
-        )
+        location_features = location_features / location_features.norm(dim=1, keepdim=True)
 
         # cosine similarity as logits
         logit_scale = self.logit_scale.exp()
@@ -481,26 +448,26 @@ class SatCLIP(nn.Module):
 def convert_weights(model: nn.Module):
     """Convert applicable model parameters to fp16"""
 
-    def _convert_weights_to_fp16(l):
-        if isinstance(l, (nn.Conv1d, nn.Conv2d, nn.Linear)):
-            l.weight.data = l.weight.data.half()
-            if l.bias is not None:
-                l.bias.data = l.bias.data.half()
+    def _convert_weights_to_fp16(val):
+        if isinstance(val, (nn.Conv1d, nn.Conv2d, nn.Linear)):
+            val.weight.data = val.weight.data.half()
+            if val.bias is not None:
+                val.bias.data = val.bias.data.half()
 
-        if isinstance(l, nn.MultiheadAttention):
+        if isinstance(val, nn.MultiheadAttention):
             for attr in [
                 *[f"{s}_proj_weight" for s in ["in", "q", "k", "v"]],
                 "in_proj_bias",
                 "bias_k",
                 "bias_v",
             ]:
-                tensor = getattr(l, attr)
+                tensor = getattr(val, attr)
                 if tensor is not None:
                     tensor.data = tensor.data.half()
 
         for name in ["text_projection", "proj"]:
-            if hasattr(l, name):
-                attr = getattr(l, name)
+            if hasattr(val, name):
+                attr = getattr(val, name)
                 if attr is not None:
                     attr.data = attr.data.half()
 
