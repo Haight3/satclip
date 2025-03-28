@@ -24,6 +24,76 @@ from satclip.location_encoder import LocationEncoder, get_neural_network, get_po
 
 
 class Bottleneck(nn.Module):
+    """
+    A bottleneck block used in deep residual networks, such as ResNet. This block
+    implements a sequence of convolutional layers with batch normalization and
+    ReLU activations, along with an optional downsampling path for the residual
+    connection. The bottleneck design reduces the number of parameters while
+    maintaining the representational power of the network.
+
+    Attributes
+    ----------
+    expansion : int
+        The expansion factor for the number of output channels in the third
+        convolutional layer.
+    conv1 : nn.Conv2d
+        The first convolutional layer with a kernel size of 1x1.
+    bn1 : nn.BatchNorm2d
+        Batch normalization layer for the first convolutional layer.
+    relu1 : nn.ReLU
+        ReLU activation function applied after the first batch normalization.
+    conv2 : nn.Conv2d
+        The second convolutional layer with a kernel size of 3x3.
+    bn2 : nn.BatchNorm2d
+        Batch normalization layer for the second convolutional layer.
+    relu2 : nn.ReLU
+        ReLU activation function applied after the second batch normalization.
+    avgpool : nn.Module
+        An average pooling layer applied after the second convolutional layer
+        when stride > 1, otherwise an identity layer.
+    conv3 : nn.Conv2d
+        The third convolutional layer with a kernel size of 1x1.
+    bn3 : nn.BatchNorm2d
+        Batch normalization layer for the third convolutional layer.
+    relu3 : nn.ReLU
+        ReLU activation function applied after the third batch normalization.
+    downsample : nn.Sequential or None
+        An optional downsampling layer for the residual connection, consisting
+        of an average pooling layer followed by a 1x1 convolution and batch
+        normalization, used when the input and output dimensions do not match.
+    stride : int
+        The stride value for the block, which determines whether downsampling
+        is applied.
+
+    Parameters
+    ----------
+    inplanes : int
+        The number of input channels.
+    planes : int
+        The number of output channels for the first and second convolutional
+        layers. The third convolutional layer outputs `planes * expansion`
+        channels.
+    stride : int, optional
+        The stride value for the block. If greater than 1, downsampling is
+        applied. Default is 1.
+
+    Methods
+    -------
+    forward(x: torch.Tensor) -> torch.Tensor
+        Defines the forward pass of the bottleneck block. Applies the sequence
+        of convolutional layers, batch normalization, ReLU activations, and
+        optional downsampling. Combines the output with the residual connection
+        and applies a final ReLU activation.
+
+    Notes
+    -----
+    - The bottleneck block is designed to reduce the computational cost and
+      number of parameters in deep residual networks by using 1x1 convolutions
+      to compress and expand the feature dimensions.
+    - The residual connection ensures gradient flow during backpropagation,
+      mitigating the vanishing gradient problem in deep networks.
+    """
+
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1):
@@ -85,6 +155,53 @@ class Bottleneck(nn.Module):
 
 
 class AttentionPool2d(nn.Module):
+    class AttentionPool2d:
+        """
+        A PyTorch module that implements a 2D attention pooling mechanism. This module is designed to
+        aggregate spatial information from a 2D input tensor using multi-head attention, which allows
+        the model to focus on different parts of the input simultaneously.
+
+        Parameters
+        ----------
+        spacial_dim : int
+            The spatial dimension of the input tensor (assumes square input, i.e., height = width).
+        embed_dim : int
+            The dimensionality of the embedding space.
+        num_heads : int
+            The number of attention heads to use in the multi-head attention mechanism.
+        output_dim : int, optional
+            The dimensionality of the output embedding. If not provided, it defaults to `embed_dim`.
+
+        Attributes
+        ----------
+        positional_embedding : torch.nn.Parameter
+            A learnable positional embedding tensor of shape `(spacial_dim**2 + 1, embed_dim)`.
+        k_proj : torch.nn.Linear
+            A linear layer for projecting the input to the key space.
+        q_proj : torch.nn.Linear
+            A linear layer for projecting the input to the query space.
+        v_proj : torch.nn.Linear
+            A linear layer for projecting the input to the value space.
+        c_proj : torch.nn.Linear
+            A linear layer for projecting the output of the attention mechanism to the desired output dimension.
+        num_heads : int
+            The number of attention heads used in the multi-head attention mechanism.
+
+        Methods
+        -------
+        forward(x)
+            Applies the attention pooling mechanism to the input tensor.
+
+        Notes
+        -----
+        - The input tensor is expected to have the shape `(N, C, H, W)`, where `N` is the batch size,
+          `C` is the number of channels, and `H` and `W` are the spatial dimensions.
+        - The module flattens the spatial dimensions of the input, adds a learnable positional embedding,
+          and applies multi-head attention to compute a pooled representation.
+        - The first token in the sequence (representing the global average) is used as the query for
+          the attention mechanism.
+        """
+
     def __init__(self, spacial_dim: int, embed_dim: int, num_heads: int, output_dim: int = None):
         super().__init__()
         self.positional_embedding = nn.Parameter(torch.randn(spacial_dim**2 + 1, embed_dim) / embed_dim**0.5)
@@ -123,11 +240,62 @@ class AttentionPool2d(nn.Module):
 
 
 class ModifiedResNet(nn.Module):
-    """
-    A ResNet class that is similar to torchvision's but contains the following changes:
-    - There are now 3 "stem" convolutions as opposed to 1, with an average pool instead of a max pool.
-    - Performs anti-aliasing strided convolutions, where an avgpool is prepended to convolutions with stride > 1
-    - The final pooling layer is a QKV attention instead of an average pool
+    """ModifiedResNet
+
+    A modified version of the ResNet architecture with customizations for enhanced feature extraction and attention-based pooling.
+    This class introduces the following changes to the standard ResNet:
+    - A 3-layer "stem" convolutional block instead of a single convolution, with an average pooling layer replacing the max pooling layer.
+    - Anti-aliasing strided convolutions, where an average pooling layer is prepended to convolutions with stride > 1.
+    - A QKV attention mechanism replaces the final average pooling layer for better feature aggregation.
+
+    Parameters
+    ----------
+    layers : list of int
+        A list specifying the number of residual blocks in each of the four layers of the network.
+    output_dim : int
+        The dimensionality of the output feature vector.
+    heads : int
+        The number of attention heads in the QKV attention pooling layer.
+    input_resolution : int, optional
+        The input image resolution (default is 224).
+    width : int, optional
+        The base width of the network (default is 64).
+    in_channels : int, optional
+        The number of input channels in the input image (default is 3).
+
+    Attributes
+    ----------
+    output_dim : int
+        The dimensionality of the output feature vector.
+    input_resolution : int
+        The input image resolution.
+    conv1, conv2, conv3 : nn.Conv2d
+        Convolutional layers in the 3-layer "stem" block.
+    bn1, bn2, bn3 : nn.BatchNorm2d
+        Batch normalization layers corresponding to the "stem" convolutions.
+    relu1, relu2, relu3 : nn.ReLU
+        ReLU activation functions for the "stem" convolutions.
+    avgpool : nn.AvgPool2d
+        Average pooling layer in the "stem" block.
+    layer1, layer2, layer3, layer4 : nn.Sequential
+        Residual layers of the network, each containing a sequence of Bottleneck blocks.
+    attnpool : AttentionPool2d
+        Attention-based pooling layer for aggregating features.
+
+    Methods
+    -------
+    forward(x)
+        Defines the forward pass of the network.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input tensor of shape (batch_size, in_channels, height, width).
+
+        Returns
+        -------
+        torch.Tensor
+            Output tensor of shape (batch_size, output_dim).
     """
 
     def __init__(self, layers, output_dim, heads, input_resolution=224, width=64, in_channels=3):
@@ -297,6 +465,88 @@ class VisionTransformer(nn.Module):
 
 
 class SatCLIP(nn.Module):
+    """
+    SatCLIP: A model for satellite image and location embedding alignment.
+    This class implements a neural network model designed to align embeddings of satellite images
+    and their corresponding geospatial locations. It combines a vision backbone for image feature
+    extraction and a location encoder for geospatial feature extraction. The model computes cosine
+    similarity between the two embeddings to measure their alignment.
+
+    Parameters
+    ----------
+    embed_dim : int
+        The dimensionality of the embedding space for both image and location features.
+    image_resolution : int
+        The resolution of input images.
+    vision_layers : Union[Tuple[int, int, int, int], int, str]
+        The architecture of the vision backbone. Can be a tuple for ResNet, an integer for Vision Transformer,
+        or a string for specific pretrained models (e.g., "moco_resnet18").
+    vision_width : int
+        The width of the vision backbone.
+    vision_patch_size : int
+        The patch size for Vision Transformer models.
+    in_channels : int
+        The number of input channels for the vision backbone.
+    le_type : str
+        The type of location encoding to use.
+    pe_type : str
+        The type of positional encoding to use.
+    frequency_num : int
+        The number of frequency components for positional encoding.
+    max_radius : int
+        The maximum radius for positional encoding.
+    min_radius : int
+        The minimum radius for positional encoding.
+    harmonics_calculation : str
+        The method used for harmonics calculation in positional encoding.
+    legendre_polys : int, optional
+        The number of Legendre polynomials to use in positional encoding (default is 10).
+    sh_embedding_dims : int, optional
+        The dimensionality of spherical harmonics embeddings (default is 16).
+    ffn : bool, optional
+        Whether to use a feed-forward network in the location encoder (default is True).
+    num_hidden_layers : int, optional
+        The number of hidden layers in the location encoder (default is 2).
+    capacity : int, optional
+        The hidden layer size in the location encoder (default is 256).
+    *args : tuple
+        Additional positional arguments.
+    **kwargs : dict
+        Additional keyword arguments.
+
+    Attributes
+    ----------
+    visual : nn.Module
+        The vision backbone for image feature extraction.
+    posenc : nn.Module
+        The positional encoding module for geospatial data.
+    nnet : nn.Module
+        The neural network for processing positional encodings.
+    location : nn.Module
+        The location encoder combining positional encoding and neural network.
+    logit_scale : nn.Parameter
+        A learnable parameter for scaling logits in cosine similarity computation.
+
+    Methods
+    -------
+    initialize_parameters()
+        Initializes the parameters of the model, particularly for the ResNet backbone.
+    dtype
+        Returns the data type of the model's parameters.
+    encode_image(image)
+        Encodes an input image into its feature representation.
+    encode_location(coords)
+        Encodes geospatial coordinates into their feature representation.
+    forward(image, coords)
+        Computes the cosine similarity logits between image and location embeddings.
+
+    Notes
+    -----
+    The model supports multiple vision backbones, including ResNet, Vision Transformer, and pretrained
+    models such as MoCo ResNet18/ResNet50/ViT. It also supports various positional encoding techniques
+    for geospatial data, making it flexible for different satellite image and location alignment tasks.
+    """
+
     def __init__(
         self,
         embed_dim: int,
