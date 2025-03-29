@@ -504,11 +504,40 @@ def get_neural_network(name, input_dim, num_classes=256, dim_hidden=256, num_lay
 
 
 class LocationEncoder(nn.Module):
+    """
+    A neural network module for encoding and processing location data.
+    This module combines a positional encoding function/module with a neural
+    network to process location-based inputs, such as latitude and longitude.
+
+    Parameters
+    ----------
+    posenc : callable or nn.Module
+        A positional encoding function or module that encodes raw coordinates
+        (e.g., latitude and longitude) into a higher-dimensional representation.
+
+    nnet : nn.Module
+        A neural network module that processes the encoded features.
+
+    Methods
+    -------
+    forward(x)
+        Encodes the input coordinates using the positional encoding function
+        and processes the encoded features using the neural network.
+
+    Examples
+    --------
+    >>> posenc = SomePositionalEncodingModule()
+    >>> nnet = SomeNeuralNetwork()
+    >>> encoder = LocationEncoder(posenc, nnet)
+    >>> raw_coordinates = torch.tensor([[37.7749, -122.4194]])  # Example: San Francisco
+    >>> output = encoder(raw_coordinates)
+    """
+
     def __init__(self, posenc, nnet):
         super().__init__()
-        self.posenc = posenc
-        self.nnet = nnet
+        self.posenc = posenc  # a positional encoding function/module
+        self.nnet = nnet  # a neural network that takes encoded inputs
 
     def forward(self, x):
-        x = self.posenc(x)
-        return self.nnet(x)
+        x = self.posenc(x)  # encode raw coordinates (lat/lon)
+        return self.nnet(x)  # process the encoded features
