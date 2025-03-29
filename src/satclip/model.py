@@ -564,8 +564,6 @@ class SatCLIP(nn.Module):
         min_radius: int,
         harmonics_calculation: str,
         legendre_polys: int = 10,
-        sh_embedding_dims: int = 16,
-        ffn: bool = True,
         num_hidden_layers: int = 2,
         capacity: int = 256,
         *args,
@@ -633,6 +631,7 @@ class SatCLIP(nn.Module):
             max_radius=max_radius,
             frequency_num=frequency_num,
         ).double()
+
         self.nnet = get_neural_network(
             name=pe_type,
             input_dim=self.posenc.embedding_dim,
@@ -640,6 +639,7 @@ class SatCLIP(nn.Module):
             dim_hidden=capacity,
             num_layers=num_hidden_layers,
         ).double()
+
         self.location = LocationEncoder(self.posenc, self.nnet).double()
 
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
