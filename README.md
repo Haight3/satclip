@@ -1,8 +1,8 @@
-# 🛰️ SatCLIP - A Global, General-Purpose Geographic Location Encoder
+# 🛰️ SatCLIP - A Global, General-Purpose Geographic Location Encoder [v. 2025.3.1]
 
 ![CLIP](/figures/satclip.png)
 
-*Overview of the pretraining and deployment pipeline for SatCLIP.*
+_Overview of the pretraining and deployment pipeline for SatCLIP._
 
 ## Approach
 
@@ -32,12 +32,15 @@ with torch.no_grad():
 
 ## Training
 
-You first need to download the *S2-100k* dataset in `/data/s2`. First, download the index file:
+You first need to download the _S2-100k_ dataset in `/data/s2`. First, download the index file:
+
 ```bash
 cd data/s2
 wget https://satclip.z13.web.core.windows.net/satclip/index.csv
 ```
+
 Within `/data/s2`, navigate to `/images`, download all images and unpack them:
+
 ```bash
 cd images
 wget https://satclip.z13.web.core.windows.net/satclip/satclip.tar
@@ -45,6 +48,7 @@ tar -xf satclip.tar
 ```
 
 Now, to train **SatCLIP** models, set the paths correctly, adapt training configs in `satclip/configs/default.yaml` and train SatCLIP by running:
+
 ```bash
 cd satclip
 python main.py
@@ -58,17 +62,19 @@ The S2-100K dataset is a dataset of 100,000 multi-spectral satellite images samp
 
 ![CLIP](/figures/globes.gif)
 
-*Visualization of embeddings obtained by different location encoders for locations around the globe.*
+_Visualization of embeddings obtained by different location encoders for locations around the globe._
 
 We provide six pretrained SatCLIP models, trained with different vision encoders and spatial resolution hyperparameters $L$ (these indicate the number of Legendre polynomials used for spherical harmonics location encoding. Please refer to our paper for more details). The pretrained models can be downloaded as follows:
-* SatCLIP-ResNet18-L10: `wget https://satclip.z13.web.core.windows.net/satclip/satclip-resnet18-l10.ckpt`
-* SatCLIP-ResNet18-L40: `wget https://satclip.z13.web.core.windows.net/satclip/satclip-resnet18-l40.ckpt`
-* SatCLIP-ResNet50-L10: `wget https://satclip.z13.web.core.windows.net/satclip/satclip-resnet50-l10.ckpt`
-* SatCLIP-ResNet50-L40: `wget https://satclip.z13.web.core.windows.net/satclip/satclip-resnet50-l40.ckpt`
-* SatCLIP-ViT16-L10: `wget https://satclip.z13.web.core.windows.net/satclip/satclip-vit16-l10.ckpt`
-* SatCLIP-ViT16-L40: `wget https://satclip.z13.web.core.windows.net/satclip/satclip-vit16-l40.ckpt`
+
+-   SatCLIP-ResNet18-L10: `wget https://satclip.z13.web.core.windows.net/satclip/satclip-resnet18-l10.ckpt`
+-   SatCLIP-ResNet18-L40: `wget https://satclip.z13.web.core.windows.net/satclip/satclip-resnet18-l40.ckpt`
+-   SatCLIP-ResNet50-L10: `wget https://satclip.z13.web.core.windows.net/satclip/satclip-resnet50-l10.ckpt`
+-   SatCLIP-ResNet50-L40: `wget https://satclip.z13.web.core.windows.net/satclip/satclip-resnet50-l40.ckpt`
+-   SatCLIP-ViT16-L10: `wget https://satclip.z13.web.core.windows.net/satclip/satclip-vit16-l10.ckpt`
+-   SatCLIP-ViT16-L40: `wget https://satclip.z13.web.core.windows.net/satclip/satclip-vit16-l40.ckpt`
 
 Usage of pretrained models is simple:
+
 ```python
 from load import get_satclip
 
@@ -88,18 +94,21 @@ You can also access SatCLIP model weights directly via [Hugging Face](https://hu
 
 Examples on how to obtain and use pretrained SatCLIP embeddings can be found in the `notebooks` folder. We provide notebooks (optimized for use with Google Colab) for the following use cases.
 
-*Setup:*
-* [A01 - Simple usage example](notebooks/A01_Simple_SatCLIP_Usage.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/microsoft/satclip/blob/main/notebooks/A01_Simple_SatCLIP_Usage.ipynb)
-* [A02 - Load models from Hugging Face](notebooks/A02_SatCLIP_Hugging_Face_Usage.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/microsoft/satclip/blob/main/notebooks/A02_SatCLIP_Hugging_Face_Usage.ipynb)
+_Setup:_
 
-*Example use cases:*
-* [B01 - Air temperature prediction with SatCLIP](notebooks/B01_Example_Air_Temperature_Prediction.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/microsoft/satclip/blob/main/notebooks/B01_Example_Air_Temperature_Prediction.ipynb)
-* [B02 - Example Image Localization](notebooks/B02_Example_Image_Localization.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/microsoft/satclip/blob/main/notebooks/B02_Example_Image_Localization.ipynb)
+-   [A01 - Simple usage example](notebooks/A01_Simple_SatCLIP_Usage.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/microsoft/satclip/blob/main/notebooks/A01_Simple_SatCLIP_Usage.ipynb)
+-   [A02 - Load models from Hugging Face](notebooks/A02_SatCLIP_Hugging_Face_Usage.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/microsoft/satclip/blob/main/notebooks/A02_SatCLIP_Hugging_Face_Usage.ipynb)
 
-*Use baseline pretrained location encoders:*
-* [C01 - Simple CSP usage](notebooks/C01_Simple_CSP_Usage.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/microsoft/satclip/blob/main/notebooks/C01_Simple_CSP_Usage.ipynb)
-* [C02 - Simple GeoCLIP usage](notebooks/C02_Simple_GeoCLIP_Usage.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/microsoft/satclip/blob/main/notebooks/C02_Simple_GeoCLIP_Usage.ipynb)
-* [C03 - Simple GPS2Vec usage](notebooks/C03_Simple_GPS2Vec_Usage.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/microsoft/satclip/blob/main/notebooks/C03_Simple_GPS2Vec_Usage.ipynb)
+_Example use cases:_
+
+-   [B01 - Air temperature prediction with SatCLIP](notebooks/B01_Example_Air_Temperature_Prediction.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/microsoft/satclip/blob/main/notebooks/B01_Example_Air_Temperature_Prediction.ipynb)
+-   [B02 - Example Image Localization](notebooks/B02_Example_Image_Localization.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/microsoft/satclip/blob/main/notebooks/B02_Example_Image_Localization.ipynb)
+
+_Use baseline pretrained location encoders:_
+
+-   [C01 - Simple CSP usage](notebooks/C01_Simple_CSP_Usage.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/microsoft/satclip/blob/main/notebooks/C01_Simple_CSP_Usage.ipynb)
+-   [C02 - Simple GeoCLIP usage](notebooks/C02_Simple_GeoCLIP_Usage.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/microsoft/satclip/blob/main/notebooks/C02_Simple_GeoCLIP_Usage.ipynb)
+-   [C03 - Simple GPS2Vec usage](notebooks/C03_Simple_GPS2Vec_Usage.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/microsoft/satclip/blob/main/notebooks/C03_Simple_GPS2Vec_Usage.ipynb)
 
 ## Citation
 
@@ -114,7 +123,7 @@ Examples on how to obtain and use pretrained SatCLIP embeddings can be found in 
 
 ## Contributing
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
+This project welcomes contributions and suggestions. Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
 the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
 
