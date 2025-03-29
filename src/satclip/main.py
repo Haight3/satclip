@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+# pylint: disable=E1101,W0221,R0901,R0902,R0913,R0914,E1136,C0301,C0411,C0412
+"""
+Main Module
+===========
+*Created on 25 by bari_is*
+*Copyright (C) 2025*
+*For COPYING and LICENSE details, please refer to the LICENSE file*
+
+"""
+
+
 from datetime import datetime
 from pathlib import Path
 
@@ -13,6 +25,63 @@ torch.set_float32_matmul_precision("high")
 
 
 class SatCLIPLightningModule(lightning.pytorch.LightningModule):
+    """
+    A PyTorch Lightning module for training and validating the SatCLIP model.
+    This module encapsulates the SatCLIP model, its loss function, and the
+    optimizer configuration. It provides methods for training, validation,
+    and optimization.
+
+    Parameters
+    ----------
+    embed_dim : int, optional
+        The embedding dimension for the model, by default 512.
+    image_resolution : int, optional
+        The resolution of input images, by default 256.
+    vision_layers : int, optional
+        The number of vision transformer layers, by default 12.
+    vision_width : int, optional
+        The width of the vision transformer, by default 768.
+    vision_patch_size : int, optional
+        The patch size for the vision transformer, by default 32.
+    in_channels : int, optional
+        The number of input channels for the images, by default 4.
+    le_type : str, optional
+        The type of local encoding, by default "grid".
+    pe_type : str, optional
+        The type of positional encoding, by default "siren".
+    frequency_num : int, optional
+        The number of frequencies for positional encoding, by default 16.
+    max_radius : int, optional
+        The maximum radius for positional encoding, by default 260.
+    min_radius : int, optional
+        The minimum radius for positional encoding, by default 1.
+    legendre_polys : int, optional
+        The number of Legendre polynomials for encoding, by default 16.
+    harmonics_calculation : str, optional
+        The method for harmonics calculation, by default "analytic".
+    sh_embedding_dims : int, optional
+        The embedding dimensions for spherical harmonics, by default 32.
+    learning_rate : float, optional
+        The learning rate for the optimizer, by default 1e-4.
+    weight_decay : float, optional
+        The weight decay for the optimizer, by default 0.01.
+    num_hidden_layers : int, optional
+        The number of hidden layers in the model, by default 2.
+    capacity : int, optional
+        The capacity of the model, by default 256.
+
+    Methods
+    -------
+    common_step(batch, batch_idx)
+        Computes the loss for a given batch of data.
+    training_step(batch, batch_idx)
+        Performs a single training step and logs the training loss.
+    validation_step(batch, batch_idx)
+        Performs a single validation step and logs the validation loss.
+    configure_optimizers()
+        Configures the optimizer for training the model.
+    """
+
     def __init__(
         self,
         embed_dim=512,
@@ -77,8 +146,11 @@ class SatCLIPLightningModule(lightning.pytorch.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        exclude = lambda n, p: p.ndim < 2 or "bn" in n or "ln" in n or "bias" in n or "logit_scale" in n
-        include = lambda n, p: not exclude(n, p)
+        def exclude(n, p):
+            return p.ndim < 2 or "bn" in n or "ln" in n or "bias" in n or "logit_scale" in n
+
+        def include(n, p):
+            return not exclude(n, p)
 
         named_parameters = list(self.model.named_parameters())
         gain_or_bias_params = [p for n, p in named_parameters if exclude(n, p) and p.requires_grad]

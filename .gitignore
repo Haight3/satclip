@@ -1,6 +1,6 @@
-*.ckpt
 *.py[cod]
 __pycache__
+*.ckpt
 
 # C extensions
 *.so

@@ -1,19 +1,70 @@
-import math
-from datetime import datetime
+# -*- coding: utf-8 -*-
+# pylint: disable=E1101,W0221,R0901,R0902,R0913,R0914,E1136,C0301,C0411,C0412,E1102
+"""
+Location Encoder
+================
+*Created on 25 by bari_is*
+*Copyright (C) 2025*
+*For COPYING and LICENSE details, please refer to the LICENSE file*
 
-import numpy as np
+"""
+
+
+import math
+
 import torch
 import torch.nn.functional as F
 from einops import rearrange
-from torch import nn, optim
+from torch import nn
 
-"""
-FCNet
-"""
+from satclip import positional_encoding as PE
 
 
 class ResLayer(nn.Module):
+    """
+    A residual layer module for neural networks.
+    This module implements a residual connection with two linear layers,
+    ReLU activations, and dropout. The input is passed through the layers
+    and added to the original input to form the output.
+
+    Parameters
+    ----------
+    linear_size : int
+        The size of the input and output features for the linear layers.
+
+    Attributes
+    ----------
+    l_size : int
+        The size of the input and output features for the linear layers.
+    nonlin1 : nn.ReLU
+        The first ReLU activation function.
+    nonlin2 : nn.ReLU
+        The second ReLU activation function.
+    dropout1 : nn.Dropout
+        The dropout layer applied after the first activation.
+    w1 : nn.Linear
+        The first linear transformation layer.
+    w2 : nn.Linear
+        The second linear transformation layer.
+
+    Methods
+    -------
+    forward(x)
+        Defines the forward pass of the residual layer. Applies the
+        transformations and adds the input to the output.
+    """
+
     def __init__(self, linear_size):
+        """
+        Initialize the ResLayer class.
+
+        Parameters
+        ----------
+        linear_size : int
+            The size of the linear layer, which determines the input and output dimensions
+            of the fully connected layers in the residual block.
+        """
+
         super(ResLayer, self).__init__()
         self.l_size = linear_size
         self.nonlin1 = nn.ReLU(inplace=True)
@@ -34,6 +85,42 @@ class ResLayer(nn.Module):
 
 
 class FCNet(nn.Module):
+    """
+    A fully connected neural network (FCNet) for encoding input features and
+    predicting class probabilities.
+
+    Parameters
+    ----------
+    num_inputs : int
+        The number of input features.
+    num_classes : int
+        The number of output classes.
+    dim_hidden : int
+        The dimensionality of the hidden layers.
+
+    Attributes
+    ----------
+    inc_bias : bool
+        Whether to include a bias term in the final classification layer.
+        Defaults to False.
+    class_emb : nn.Linear
+        A linear layer mapping the hidden representation to class logits.
+    feats : nn.Sequential
+        A sequential model consisting of a linear layer, ReLU activation,
+        and multiple residual layers for feature extraction.
+
+    Methods
+    -------
+    forward(x)
+        Forward pass through the network. Encodes the input features and
+        predicts class logits.
+    Notes
+
+    -----
+    This model uses residual layers (`ResLayer`) to enhance feature extraction
+    in the hidden layers.
+    """
+
     def __init__(self, num_inputs, num_classes, dim_hidden):
         super(FCNet, self).__init__()
         self.inc_bias = False
@@ -54,10 +141,33 @@ class FCNet(nn.Module):
         return class_pred
 
 
-"""A simple Multi Layer Perceptron"""
-
-
 class MLP(nn.Module):
+    """
+    A Multi-Layer Perceptron (MLP) implementation using PyTorch.
+
+    Parameters
+    ----------
+    input_dim : int
+        The dimensionality of the input features.
+    dim_hidden : int
+        The number of units in each hidden layer.
+    num_layers : int
+        The number of hidden layers in the MLP.
+    out_dims : int
+        The dimensionality of the output features.
+
+    Attributes
+    ----------
+    features : nn.Sequential
+        A sequential container of the MLP layers, including input, hidden, and output layers.
+
+    Methods
+    -------
+    forward(x)
+        Performs a forward pass through the MLP.
+
+    """
+
     def __init__(self, input_dim, dim_hidden, num_layers, out_dims):
         super(MLP, self).__init__()
 
@@ -79,17 +189,88 @@ class MLP(nn.Module):
 
 
 def exists(val):
+    """
+    Check if a value is not None.
+
+    Parameters
+    ----------
+    val : any
+        The value to check.
+
+    Returns
+    -------
+    bool
+        True if the value is not None, False otherwise.
+    """
+
     return val is not None
 
 
 def cast_tuple(val, repeat=1):
+    """
+    Converts a value into a tuple. If the input value is not already a tuple,
+    it repeats the value a specified number of times to create a tuple.
+
+    Parameters
+    ----------
+    val : Any
+        The value to be converted into a tuple.
+    repeat : int, optional
+        The number of times to repeat the value if it is not a tuple.
+        Default is 1.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the input value repeated `repeat` times,
+        or the input value itself if it is already a tuple.
+    """
+
     return val if isinstance(val, tuple) else ((val,) * repeat)
 
 
-"""Sinusoidal Representation Network (SIREN)"""
-
-
 class SirenNet(nn.Module):
+    """
+    A neural network implementation of a SIREN (Sinusoidal Representation Network)
+    with multiple layers, designed for tasks requiring high-frequency function fitting.
+
+    Parameters
+    ----------
+    dim_in : int
+        The dimensionality of the input features.
+    dim_hidden : int
+        The dimensionality of the hidden layers.
+    dim_out : int
+        The dimensionality of the output features.
+    num_layers : int
+        The number of layers in the network.
+    w0 : float, optional
+        The frequency scaling factor for layers other than the first. Default is 1.0.
+    w0_initial : float, optional
+        The frequency scaling factor for the first layer. Default is 30.0.
+    use_bias : bool, optional
+        Whether to include a bias term in the layers. Default is True.
+    final_activation : callable or None, optional
+        The activation function to apply in the final layer. If None, an identity function is used. Default is None.
+    degreeinput : bool, optional
+        If True, the input is assumed to be in degrees and will be normalized to the range [-π, π]. Default is False.
+    dropout : bool, optional
+        Whether to apply dropout in the layers. Default is True.
+
+    Attributes
+    ----------
+    num_layers : int
+        The number of layers in the network.
+    dim_hidden : int
+        The dimensionality of the hidden layers.
+    degreeinput : bool
+        Indicates whether the input is normalized from degrees to radians.
+    layers : nn.ModuleList
+        A list of SIREN layers in the network.
+    last_layer : Siren
+        The final SIREN layer with optional activation.
+    """
+
     def __init__(
         self,
         dim_in,
@@ -272,8 +453,6 @@ def get_positional_encoding(
     max_radius=360,
     frequency_num=10,
 ):
-    # Move the import statement inside the function
-    from . import positional_encoding as PE
 
     if name == "direct":
         return PE.Direct()
@@ -326,11 +505,40 @@ def get_neural_network(name, input_dim, num_classes=256, dim_hidden=256, num_lay
 
 
 class LocationEncoder(nn.Module):
+    """
+    A neural network module for encoding and processing location data.
+    This module combines a positional encoding function/module with a neural
+    network to process location-based inputs, such as latitude and longitude.
+
+    Parameters
+    ----------
+    posenc : callable or nn.Module
+        A positional encoding function or module that encodes raw coordinates
+        (e.g., latitude and longitude) into a higher-dimensional representation.
+
+    nnet : nn.Module
+        A neural network module that processes the encoded features.
+
+    Methods
+    -------
+    forward(x)
+        Encodes the input coordinates using the positional encoding function
+        and processes the encoded features using the neural network.
+
+    Examples
+    --------
+    >>> posenc = SomePositionalEncodingModule()
+    >>> nnet = SomeNeuralNetwork()
+    >>> encoder = LocationEncoder(posenc, nnet)
+    >>> raw_coordinates = torch.tensor([[37.7749, -122.4194]])  # Example: San Francisco
+    >>> output = encoder(raw_coordinates)
+    """
+
     def __init__(self, posenc, nnet):
         super().__init__()
-        self.posenc = posenc
-        self.nnet = nnet
+        self.posenc = posenc  # a positional encoding function/module
+        self.nnet = nnet  # a neural network that takes encoded inputs
 
     def forward(self, x):
-        x = self.posenc(x)
-        return self.nnet(x)
+        x = self.posenc(x)  # encode raw coordinates (lat/lon)
+        return self.nnet(x)  # process the encoded features
