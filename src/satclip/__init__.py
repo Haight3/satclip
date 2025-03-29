@@ -1,5 +1,5 @@
 # flake8: noqa
-__version__ = '2025.3.2'
+__version__ = '2025.3.3'
 
 from .location_encoder import *
 from .loss import *

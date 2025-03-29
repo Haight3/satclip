@@ -14,7 +14,7 @@ def read(*names, **kwargs):
 
 setup(
     name='satclip',
-    version='2025.3.2',
+    version='2025.3.3',
     license='MIT',
     description='SatCLIP - A Global, General-Purpose Geographic Location Encoder from Microsoft',
     author='Konstantin Klemmer, Ismail Baris',
@@ -60,7 +60,7 @@ setup(
     ],
     python_requires='>=3.7',
     install_requires=[
-        # eg: 'aspectlib==2025.3.2', 'six>=1.7',
+        # eg: 'aspectlib==2025.3.3', 'six>=1.7',
     ],
     extras_require={
         # eg:
