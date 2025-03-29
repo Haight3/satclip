@@ -10,7 +10,7 @@ target-version = ['py39']
 skip-string-normalization = true
 
 [tool.bumpver]
-current_version = "2025.3.1"
+current_version = "2025.3.2"
 version_pattern = "MAJOR.MINOR.PATCH"
 version_regex = "(?P<year>[0-9]{4})\\.(?P<month>[0-9]{1,2})\\.(?P<patch>[0-9]+)"
 version_replacement = "{year}.{month}.{patch}"
@@ -26,7 +26,16 @@ push = true
 "setup.py" = [
     "{version}",
 ]
-"satclip/__init__.py" = [
+"README.md" = [
+    "{version}",
+]
+"src/satclip/__init__.py" = [
+    "{version}",
+]
+"resources/docs/conf.py" = [
+    "{version}",
+]
+"resources/docs/readme.rst" = [
     "{version}",
 ]
 
@@ -34,5 +43,5 @@ push = true
 multi_line_output = 3
 include_trailing_comma = true
 force_grid_wrap = 0
-line_length = 120
+line_length = 110
 profile = "black"
