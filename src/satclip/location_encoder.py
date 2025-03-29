@@ -453,6 +453,7 @@ def get_positional_encoding(
     max_radius=360,
     frequency_num=10,
 ):
+
     if name == "direct":
         return PE.Direct()
     elif name == "cartesian3d":
