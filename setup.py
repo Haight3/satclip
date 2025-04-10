@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-import io
 from glob import glob
-from os.path import basename, dirname, join, splitext
+from os.path import basename, splitext
 
 from setuptools import find_packages, setup
 
 
-def read(*names, **kwargs):
-    with io.open(join(dirname(__file__), *names), encoding=kwargs.get('encoding', 'utf8')) as fh:
-        return fh.read()
+def parse_requirements(filename: str) -> list[str]:
+    """Load dependencies from a requirements.txt file."""
+    with open(filename, 'r', encoding="utf-8") as f:
+        return [line.strip() for line in f if line.strip() and not line.startswith('#')]
 
 
 setup(
@@ -36,17 +36,9 @@ setup(
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
-        'Programming Language :: Python :: Implementation :: CPython',
-        'Programming Language :: Python :: Implementation :: PyPy',
-        # uncomment if you test on these interpreters:
-        # 'Programming Language :: Python :: Implementation :: IronPython',
-        # 'Programming Language :: Python :: Implementation :: Jython',
-        # 'Programming Language :: Python :: Implementation :: Stackless',
         'Topic :: Utilities',
         'Private :: Do Not Upload',
     ],
@@ -59,9 +51,7 @@ setup(
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
     python_requires='>=3.7',
-    install_requires=[
-        # eg: 'aspectlib==2025.3.2', 'six>=1.7',
-    ],
+    install_requires=parse_requirements("requirements.txt"),
     extras_require={
         # eg:
         #   'rst': ['docutils>=0.11'],
@@ -69,7 +59,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'satclip = satclip.cli:main',
+            'satclip=satclip.__main__:cli_main',
         ]
     },
 )
