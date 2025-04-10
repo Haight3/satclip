@@ -1,31 +1,26 @@
-name: satclip
+name: satclip2
 channels:
-  - defaults
-  - anaconda
   - conda-forge
 dependencies:
-  - python=3.9
+  - python=3.10
   - numpy
-  - scipy
   - mkl
-  - mkl_fft
-  - mkl_random
-  - mkl-service
-  - conda-forge::pyglfw
-  - conda-forge::pre-commit
+  - pandas
+  - proj
   - matplotlib
-  - seaborn
-  - jupyter
-  - jupyterlab
-  - cython
-  - psutil
-  - pylint
-  - mypy
-  - pycodestyle
-  - pytest
-  - pytest-cov
-  - sphinx
   - pip
   - pip:
-      - pyyaml
-      - tox
+      - albumentations
+      - azure-storage-blob
+      - einops
+      - fiona
+      - lightning
+      - planetary-computer
+      - pystac-client
+      - rasterio
+      - rioxarray
+      - timm
+      - tqdm
+      - torchgeo
+      - torch==2.6.0+cu118
+      - torchvision==0.21.0+cu118
