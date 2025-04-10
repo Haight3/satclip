@@ -23,9 +23,11 @@ Notes
 
 import torch
 
+from satclip import SatCLIPLightningModule
 from satclip.location_encoder import LocationEncoder
-from satclip.main import SatCLIPLightningModule
 from satclip.model import SatCLIP
+
+__all__ = ["get_satclip", "load_location_encoder"]
 
 
 def get_satclip(ckpt_path: str | None = None) -> SatCLIP:
