@@ -10,10 +10,10 @@ target-version = ['py39']
 skip-string-normalization = true
 
 [tool.bumpver]
-current_version = "2025.3.2"
-version_pattern = "MAJOR.MINOR.PATCH"
-version_regex = "(?P<year>[0-9]{4})\\.(?P<month>[0-9]{1,2})\\.(?P<patch>[0-9]+)"
-version_replacement = "{year}.{month}.{patch}"
+current_version = "2025.4.2.5"
+version_pattern = "YYYY.MM.PATCH.INC0"
+version_regex = "(?P<year>[0-9]{4})\\.(?P<month>[0-9]{1,2})\\.(?P<patch>[0-9]+)\\.(?P<inc>[0-9]+)"
+version_replacement = "{year}.{month}.{patch}.{inc}"
 commit_message = "ver(satclip): bump version from {old_version} -> {new_version}"
 commit = true
 tag = true
