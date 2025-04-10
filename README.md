@@ -66,14 +66,14 @@ model = SatCLIP(
     n_channels=13,
     vision_layers=4,
     vision_width=768,
-    vision_patch_size=32, 
+    vision_patch_size=32,
     le_type='sphericalharmonics',
     pe_type='siren',
     legendre_polys=10,
     frequency_num=16,
     max_radius=360,
     min_radius=1,
-    harmonics_calculation='analytic', 
+    harmonics_calculation='analytic',
 )
 
 img_batch = torch.randn(32, 13, 224, 224)  # Represents a batch of 32 images
@@ -105,8 +105,7 @@ tar -xf satclip.tar
 Now, to train **SatCLIP** models, set the paths correctly, adapt training configs in `satclip/configs/default.yaml` and train SatCLIP by running:
 
 ```bash
-cd satclip
-python main.py
+satclip
 ```
 
 ### Use of the S2-100K dataset
