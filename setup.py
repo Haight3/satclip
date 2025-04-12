@@ -14,7 +14,7 @@ def parse_requirements(filename: str) -> list[str]:
 
 setup(
     name='satclip',
-    version='2025.4.2.6',
+    version='2025.4.2.7',
     license='MIT',
     description='SatCLIP - A Global, General-Purpose Geographic Location Encoder from Microsoft',
     author='Konstantin Klemmer, Ismail Baris',

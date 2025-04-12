@@ -1,4 +1,4 @@
-# 🛰️ SatCLIP - A Global, General-Purpose Geographic Location Encoder [2025.4.2.6]
+# 🛰️ SatCLIP - A Global, General-Purpose Geographic Location Encoder [2025.4.2.7]
 
 ![CLIP](./resources/figures/satclip.png)
 

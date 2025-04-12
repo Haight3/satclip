@@ -1,7 +1,7 @@
 ========
 Overview
 ========
-SatClip [v-2025.4.2.6]
+SatClip [v-2025.4.2.7]
 
 
 .. start-badges
@@ -17,9 +17,9 @@ SatClip [v-2025.4.2.6]
     :target: https://satclip.readthedocs.io/
     :alt: Documentation Status
 
-.. |commits-since| image:: https://img.shields.io/github/commits-since/Haight3/satclip/v2025.4.2.6.svg
+.. |commits-since| image:: https://img.shields.io/github/commits-since/Haight3/satclip/v2025.4.2.7.svg
     :alt: Commits since latest release
-    :target: https://github.com/Haight3/satclip/compare/v2025.4.2.6...main
+    :target: https://github.com/Haight3/satclip/compare/v2025.4.2.7...main
 
 
 .. end-badges
