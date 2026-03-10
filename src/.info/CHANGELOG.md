@@ -9,43 +9,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Modern Python
 
-### 🚀 Initialization:
+### 🚀 Initialization
 
--   Introduced a modern Python project structure with pyproject.toml and src directory.
+- Introduced a modern Python project structure with pyproject.toml and src directory.
 
-### 📝 Documentation:
+### 📝 Documentation
 
--   Added and updated documentation for location_encoder and wrap.
--   Improved model documentation.
--   🔧 Refactoring:
+- Added and updated documentation for location_encoder and wrap.
+- Improved model documentation.
+- 🔧 Refactoring:
 
--   Removed unused statements in the model code.
+- Removed unused statements in the model code.
 
-### 🛠️ Fixes:
+### 🛠️ Fixes
 
--   Fixed versioning issues in pyproject.toml.
--   Resolved partial imports and fixed import errors.
--   Fixed mlflow loading and model signature issues.
--   Fixed input data type in SatClipWrapper.
--   ✨ Features:
+- Fixed versioning issues in pyproject.toml.
+- Resolved partial imports and fixed import errors.
+- Fixed mlflow loading and model signature issues.
+- Fixed input data type in SatClipWrapper.
+- ✨ Features:
 
--   Added versioning support to the build process.
--   Added a new function to load mlflow models.
--   Allowed models to load without a checkpoint.
+- Added versioning support to the build process.
+- Added a new function to load mlflow models.
+- Allowed models to load without a checkpoint.
 
 ## [2025.3.1] - (2025-03-29)
 
 Modern Python
 
-### 🚀 Initialization:
+### 🚀 Initialization
 
--   Introduced a modern Python project structure with pyproject.toml and src directory.
+- Introduced a modern Python project structure with pyproject.toml and src directory.
 
-### 📝 Documentation:
+### 📝 Documentation
 
--   Added and updated documentation for location_encoder and wrap.
--   Improved model documentation.
+- Added and updated documentation for location_encoder and wrap.
+- Improved model documentation.
 
-### 🔧 Refactoring:
+### 🔧 Refactoring
 
--   Removed unused statements in the model code.
+- Removed unused statements in the model code.
