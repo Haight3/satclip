@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "satclip"
-version = "2026.3.0.2"
+version = "2026.3.1.0"
 description = "SatCLIP - A Global, General-Purpose Geographic Location Encoder from Microsoft"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -54,7 +54,7 @@ where = ["src"]
 dependencies = { file = ["requirements.txt"] }
 
 [tool.bumpver]
-current_version = "2026.3.0.2"
+current_version = "2026.3.1.0"
 version_pattern = "YYYY.MM.PATCH.INC0"
 version_regex = "(?P<year>[0-9]{4})\\.(?P<month>[0-9]{1,2})\\.(?P<patch>[0-9]+)\\.(?P<inc>[0-9]+)"
 version_replacement = "{year}.{month}.{patch}.{inc}"
