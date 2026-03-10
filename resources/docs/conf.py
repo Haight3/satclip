@@ -20,7 +20,7 @@ project = 'SatClip'
 year = '2025'
 author = 'Ismail Baris'
 copyright = '{0}, {1}'.format(year, author)
-version = release = '2025.4.2.8'
+version = release = '2026.3.0.0'
 
 pygments_style = 'trac'
 templates_path = ['.']
