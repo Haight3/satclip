@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=E1101,W0221,R0901,R0902,R0913,R0914,E1136,C0301,C0411,C0412,E1102
 """
-Location Encoder
-================
+Location Encoding Components
+============================
 *Created on 25 by bari_is*
 *Copyright (C) 2025*
 *For COPYING and LICENSE details, please refer to the LICENSE file*
 
+This module defines positional-encoding driven neural components used to
+encode geographic coordinates. It includes selectable encoding backends,
+network factories, and wrapper modules used by SatCLIP location models.
 """
-
 
 import math
 
@@ -54,7 +56,7 @@ class ResLayer(nn.Module):
         transformations and adds the input to the output.
     """
 
-    def __init__(self, linear_size):
+    def __init__(self, linear_size: int) -> None:
         """
         Initialize the ResLayer class.
 
@@ -73,7 +75,21 @@ class ResLayer(nn.Module):
         self.w1 = nn.Linear(self.l_size, self.l_size)
         self.w2 = nn.Linear(self.l_size, self.l_size)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Apply the residual block to an input tensor.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input features with shape ``(..., linear_size)``.
+
+        Returns
+        -------
+        torch.Tensor
+            Features after two linear layers, non-linearities, and residual
+            addition.
+        """
         y = self.w1(x)
         y = self.nonlin1(y)
         y = self.dropout1(y)
@@ -121,7 +137,19 @@ class FCNet(nn.Module):
     in the hidden layers.
     """
 
-    def __init__(self, num_inputs, num_classes, dim_hidden):
+    def __init__(self, num_inputs: int, num_classes: int, dim_hidden: int) -> None:
+        """
+        Initialize the fully connected location network.
+
+        Parameters
+        ----------
+        num_inputs : int
+            Dimension of encoded input features.
+        num_classes : int
+            Output feature dimension.
+        dim_hidden : int
+            Hidden feature dimension for internal residual blocks.
+        """
         super(FCNet, self).__init__()
         self.inc_bias = False
         self.class_emb = nn.Linear(dim_hidden, num_classes, bias=self.inc_bias)
@@ -135,7 +163,20 @@ class FCNet(nn.Module):
             ResLayer(dim_hidden),
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Run a forward pass through the feature extractor and output head.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input encoded coordinates.
+
+        Returns
+        -------
+        torch.Tensor
+            Output logits or embeddings with shape ``(..., num_classes)``.
+        """
         loc_emb = self.feats(x)
         class_pred = self.class_emb(loc_emb)
         return class_pred
@@ -168,7 +209,27 @@ class MLP(nn.Module):
 
     """
 
-    def __init__(self, input_dim, dim_hidden, num_layers, out_dims):
+    def __init__(
+        self,
+        input_dim: int,
+        dim_hidden: int,
+        num_layers: int,
+        out_dims: int,
+    ) -> None:
+        """
+        Initialize the multilayer perceptron.
+
+        Parameters
+        ----------
+        input_dim : int
+            Number of input features.
+        dim_hidden : int
+            Width of hidden layers.
+        num_layers : int
+            Number of repeated hidden blocks.
+        out_dims : int
+            Number of output features.
+        """
         super(MLP, self).__init__()
 
         layers = []
@@ -184,11 +245,24 @@ class MLP(nn.Module):
 
         self.features = nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Compute output features for an input tensor.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input features.
+
+        Returns
+        -------
+        torch.Tensor
+            Network outputs.
+        """
         return self.features(x)
 
 
-def exists(val):
+def exists(val: object) -> bool:
     """
     Check if a value is not None.
 
@@ -206,7 +280,7 @@ def exists(val):
     return val is not None
 
 
-def cast_tuple(val, repeat=1):
+def cast_tuple(val: object, repeat: int = 1) -> tuple:
     """
     Converts a value into a tuple. If the input value is not already a tuple,
     it repeats the value a specified number of times to create a tuple.
@@ -273,17 +347,43 @@ class SirenNet(nn.Module):
 
     def __init__(
         self,
-        dim_in,
-        dim_hidden,
-        dim_out,
-        num_layers,
-        w0=1.0,
-        w0_initial=30.0,
-        use_bias=True,
-        final_activation=None,
-        degreeinput=False,
-        dropout=True,
-    ):
+        dim_in: int,
+        dim_hidden: int,
+        dim_out: int,
+        num_layers: int,
+        w0: float = 1.0,
+        w0_initial: float = 30.0,
+        use_bias: bool = True,
+        final_activation: nn.Module | None = None,
+        degreeinput: bool = False,
+        dropout: bool = True,
+    ) -> None:
+        """
+        Initialize a SIREN stack with configurable first-layer frequency.
+
+        Parameters
+        ----------
+        dim_in : int
+            Input feature dimension.
+        dim_hidden : int
+            Hidden layer width.
+        dim_out : int
+            Output feature dimension.
+        num_layers : int
+            Number of hidden SIREN layers.
+        w0 : float, optional
+            Frequency factor for non-first layers.
+        w0_initial : float, optional
+            Frequency factor for the first layer.
+        use_bias : bool, optional
+            Whether to use bias terms in linear transforms.
+        final_activation : nn.Module or None, optional
+            Activation applied after the final linear transform.
+        degreeinput : bool, optional
+            Whether to convert degree inputs to radians in ``[-pi, pi]``.
+        dropout : bool, optional
+            Whether to enable dropout in hidden SIREN layers.
+        """
         super().__init__()
         self.num_layers = num_layers
         self.dim_hidden = dim_hidden
@@ -316,7 +416,22 @@ class SirenNet(nn.Module):
             dropout=False,
         )
 
-    def forward(self, x, mods=None):
+    def forward(self, x: torch.Tensor, mods=None) -> torch.Tensor:
+        """
+        Run the full SIREN forward pass.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input coordinates or encoded features.
+        mods : torch.Tensor or tuple or None, optional
+            Optional per-layer modulation vectors broadcast onto hidden states.
+
+        Returns
+        -------
+        torch.Tensor
+            Final network outputs.
+        """
 
         # do some normalization to bring degrees in a -pi to pi range
         if self.degreeinput:
@@ -332,28 +447,133 @@ class SirenNet(nn.Module):
 
         return self.last_layer(x)
 
+    def forward_features(self, x: torch.Tensor, mods=None) -> torch.Tensor:
+        """
+        Compute hidden features before the final output layer.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input coordinates or encoded features.
+        mods : torch.Tensor or tuple or None, optional
+            Optional per-layer modulation vectors.
+
+        Returns
+        -------
+        torch.Tensor
+            Hidden representation produced by the last hidden SIREN block.
+        """
+        # do some normalization to bring degrees in a -pi to pi range
+        if self.degreeinput:
+            x = torch.deg2rad(x) - torch.pi
+
+        mods = cast_tuple(mods, self.num_layers)
+
+        for layer, mod in zip(self.layers, mods):
+            x = layer(x)
+
+            if exists(mod):
+                x *= rearrange(mod, "d -> () d")
+
+        return x
+
 
 class Sine(nn.Module):
-    def __init__(self, w0=1.0):
+    """
+    Sine activation module with configurable frequency multiplier.
+
+    Parameters
+    ----------
+    w0 : float, optional
+        Frequency multiplier applied before ``sin``.
+    """
+
+    def __init__(self, w0: float = 1.0) -> None:
+        """
+        Initialize the sine activation.
+
+        Parameters
+        ----------
+        w0 : float, optional
+            Frequency multiplier applied to the input tensor.
+        """
         super().__init__()
         self.w0 = w0
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Apply sine activation.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input tensor.
+
+        Returns
+        -------
+        torch.Tensor
+            ``sin(w0 * x)``.
+        """
         return torch.sin(self.w0 * x)
 
 
 class Siren(nn.Module):
+    """
+    Single SIREN layer with custom initialization and activation.
+
+    Parameters
+    ----------
+    dim_in : int
+        Input feature dimension.
+    dim_out : int
+        Output feature dimension.
+    w0 : float, optional
+        Frequency multiplier for the default sine activation.
+    c : float, optional
+        Constant used by SIREN initialization.
+    is_first : bool, optional
+        Whether this layer is the first layer in the network.
+    use_bias : bool, optional
+        Whether to include a learnable bias.
+    activation : nn.Module or None, optional
+        Activation module; defaults to :class:`Sine`.
+    dropout : bool, optional
+        Whether to apply dropout to the linear output.
+    """
+
     def __init__(
         self,
-        dim_in,
-        dim_out,
-        w0=1.0,
-        c=6.0,
-        is_first=False,
-        use_bias=True,
-        activation=None,
-        dropout=False,
-    ):
+        dim_in: int,
+        dim_out: int,
+        w0: float = 1.0,
+        c: float = 6.0,
+        is_first: bool = False,
+        use_bias: bool = True,
+        activation: nn.Module | None = None,
+        dropout: bool = False,
+    ) -> None:
+        """
+        Initialize the SIREN layer.
+
+        Parameters
+        ----------
+        dim_in : int
+            Input feature dimension.
+        dim_out : int
+            Output feature dimension.
+        w0 : float, optional
+            Frequency multiplier for the default sine activation.
+        c : float, optional
+            Initialization constant from the SIREN formulation.
+        is_first : bool, optional
+            Whether this is the first layer.
+        use_bias : bool, optional
+            Whether to allocate a learnable bias.
+        activation : nn.Module or None, optional
+            Activation module to apply after the linear transform.
+        dropout : bool, optional
+            Whether to apply dropout during training.
+        """
         super().__init__()
         self.dim_in = dim_in
         self.is_first = is_first
@@ -368,7 +588,27 @@ class Siren(nn.Module):
         self.bias = nn.Parameter(bias) if use_bias else None
         self.activation = Sine(w0) if activation is None else activation
 
-    def init_(self, weight, bias, c, w0):
+    def init_(
+        self,
+        weight: torch.Tensor,
+        bias: torch.Tensor | None,
+        c: float,
+        w0: float,
+    ) -> None:
+        """
+        Initialize layer parameters with SIREN-compatible bounds.
+
+        Parameters
+        ----------
+        weight : torch.Tensor
+            Weight tensor to initialize in-place.
+        bias : torch.Tensor or None
+            Optional bias tensor to initialize in-place.
+        c : float
+            Initialization constant.
+        w0 : float
+            Frequency scaling factor.
+        """
         dim = self.dim_in
 
         w_std = (1 / dim) if self.is_first else (math.sqrt(c / dim) / w0)
@@ -377,7 +617,20 @@ class Siren(nn.Module):
         if exists(bias):
             bias.uniform_(-w_std, w_std)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Apply linear projection, optional dropout, and activation.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input features.
+
+        Returns
+        -------
+        torch.Tensor
+            Activated outputs.
+        """
         out = F.linear(x, self.weight, self.bias)
         if self.dropout:
             out = F.dropout(out, training=self.training)
@@ -386,7 +639,32 @@ class Siren(nn.Module):
 
 
 class Modulator(nn.Module):
-    def __init__(self, dim_in, dim_hidden, num_layers):
+    """
+    Layer-wise modulator that conditions SIREN hidden states on a latent vector.
+
+    Parameters
+    ----------
+    dim_in : int
+        Latent vector dimension.
+    dim_hidden : int
+        Hidden modulation dimension per layer.
+    num_layers : int
+        Number of modulation layers.
+    """
+
+    def __init__(self, dim_in: int, dim_hidden: int, num_layers: int) -> None:
+        """
+        Initialize the latent modulator network.
+
+        Parameters
+        ----------
+        dim_in : int
+            Latent vector dimension.
+        dim_hidden : int
+            Hidden modulation dimension.
+        num_layers : int
+            Number of generated modulation tensors.
+        """
         super().__init__()
         self.layers = nn.ModuleList([])
 
@@ -396,7 +674,20 @@ class Modulator(nn.Module):
 
             self.layers.append(nn.Sequential(nn.Linear(dim, dim_hidden), nn.ReLU()))
 
-    def forward(self, z):
+    def forward(self, z: torch.Tensor) -> tuple[torch.Tensor, ...]:
+        """
+        Produce per-layer modulation features.
+
+        Parameters
+        ----------
+        z : torch.Tensor
+            Latent conditioning vector.
+
+        Returns
+        -------
+        tuple[torch.Tensor, ...]
+            One modulation tensor per layer.
+        """
         x = z
         hiddens = []
 
@@ -409,7 +700,43 @@ class Modulator(nn.Module):
 
 
 class SirenWrapper(nn.Module):
-    def __init__(self, net, image_width, image_height, latent_dim=None):
+    """
+    Image-grid wrapper around :class:`SirenNet` for coordinate-based rendering.
+
+    Parameters
+    ----------
+    net : SirenNet
+        SIREN network evaluated on generated image coordinates.
+    image_width : int
+        Output image width.
+    image_height : int
+        Output image height.
+    latent_dim : int or None, optional
+        Optional latent dimension for modulation.
+    """
+
+    def __init__(
+        self,
+        net: SirenNet,
+        image_width: int,
+        image_height: int,
+        latent_dim: int | None = None,
+    ) -> None:
+        """
+        Initialize the wrapper and precompute the coordinate grid.
+
+        Parameters
+        ----------
+        net : SirenNet
+            SIREN network to evaluate over the image grid.
+        image_width : int
+            Width of the output image.
+        image_height : int
+            Height of the output image.
+        latent_dim : int or None, optional
+            Latent dimension used for modulation. If omitted, modulation is
+            disabled.
+        """
         super().__init__()
         assert isinstance(net, SirenNet), "SirenWrapper must receive a Siren network"
 
@@ -429,7 +756,33 @@ class SirenWrapper(nn.Module):
         mgrid = rearrange(mgrid, "h w c -> (h w) c")
         self.register_buffer("grid", mgrid)
 
-    def forward(self, img=None, *, latent=None):
+    def forward(
+        self,
+        img: torch.Tensor | None = None,
+        *,
+        latent: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        """
+        Evaluate the wrapped SIREN on the coordinate grid.
+
+        Parameters
+        ----------
+        img : torch.Tensor or None, optional
+            Target image tensor. When provided, returns MSE loss against model
+            output.
+        latent : torch.Tensor or None, optional
+            Latent vector used when modulation is enabled.
+
+        Returns
+        -------
+        torch.Tensor
+            Rendered image tensor or scalar MSE loss when ``img`` is provided.
+
+        Raises
+        ------
+        AssertionError
+            If latent input is inconsistently provided with modulation setup.
+        """
         modulate = exists(self.modulator)
         assert not (modulate ^ exists(latent)), "latent vector must be only supplied if `latent_dim` was passed in on instantiation"
 
@@ -446,14 +799,41 @@ class SirenWrapper(nn.Module):
 
 
 def get_positional_encoding(
-    name,
-    legendre_polys=10,
-    harmonics_calculation="analytic",
-    min_radius=1,
-    max_radius=360,
-    frequency_num=10,
-):
+    name: str,
+    legendre_polys: int = 10,
+    harmonics_calculation: str = "analytic",
+    min_radius: int = 1,
+    max_radius: int = 360,
+    frequency_num: int = 10,
+) -> nn.Module:
+    """
+    Create a positional encoding module by name.
 
+    Parameters
+    ----------
+    name : str
+        Encoding identifier.
+    legendre_polys : int, optional
+        Number of Legendre polynomials for spherical harmonics variants.
+    harmonics_calculation : str, optional
+        Strategy used by spherical harmonics encoders.
+    min_radius : int, optional
+        Minimum radius for radial encodings.
+    max_radius : int, optional
+        Maximum radius for radial encodings.
+    frequency_num : int, optional
+        Number of frequencies for radial or grid-based encodings.
+
+    Returns
+    -------
+    nn.Module
+        Instantiated positional encoding module.
+
+    Raises
+    ------
+    ValueError
+        If ``name`` is not supported.
+    """
     if name == "direct":
         return PE.Direct()
     elif name == "cartesian3d":
@@ -481,7 +861,39 @@ def get_positional_encoding(
         raise ValueError(f"{name} not a known positional encoding.")
 
 
-def get_neural_network(name, input_dim, num_classes=256, dim_hidden=256, num_layers=2):
+def get_neural_network(
+    name: str,
+    input_dim: int,
+    num_classes: int = 256,
+    dim_hidden: int = 256,
+    num_layers: int = 2,
+) -> nn.Module:
+    """
+    Create a neural network backend by name.
+
+    Parameters
+    ----------
+    name : str
+        Network identifier.
+    input_dim : int
+        Input feature dimension.
+    num_classes : int, optional
+        Output feature dimension.
+    dim_hidden : int, optional
+        Hidden dimension for multi-layer models.
+    num_layers : int, optional
+        Number of hidden layers for configurable models.
+
+    Returns
+    -------
+    nn.Module
+        Instantiated neural network module.
+
+    Raises
+    ------
+    ValueError
+        If ``name`` is not supported.
+    """
     if name == "linear":
         return nn.Linear(input_dim, num_classes)
     elif name == "mlp":
@@ -534,11 +946,69 @@ class LocationEncoder(nn.Module):
     >>> output = encoder(raw_coordinates)
     """
 
-    def __init__(self, posenc, nnet):
+    def __init__(self, posenc: nn.Module, nnet: nn.Module) -> None:
+        """
+        Initialize the location encoder.
+
+        Parameters
+        ----------
+        posenc : nn.Module
+            Positional encoding module that maps raw coordinates to encoded
+            features.
+        nnet : nn.Module
+            Downstream network operating on encoded features.
+        """
         super().__init__()
         self.posenc = posenc  # a positional encoding function/module
         self.nnet = nnet  # a neural network that takes encoded inputs
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Encode coordinates and run prediction.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Raw coordinate tensor, typically latitude/longitude pairs.
+
+        Returns
+        -------
+        torch.Tensor
+            Network output after positional encoding.
+        """
         x = self.posenc(x)  # encode raw coordinates (lat/lon)
         return self.nnet(x)  # process the encoded features
+
+    def forward_features(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Encode coordinates and return intermediate model features.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Raw coordinate tensor.
+
+        Returns
+        -------
+        torch.Tensor
+            Feature representation from ``self.nnet.forward_features``.
+        """
+        x = self.posenc(x)  # encode raw coordinates (lat/lon)
+        return self.nnet.forward_features(x)  # process the encoded features
+
+    def forward_decomp(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Encode coordinates and return decomposed outputs from the backend.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Raw coordinate tensor.
+
+        Returns
+        -------
+        torch.Tensor
+            Decomposed output from ``self.nnet.forward_decomp``.
+        """
+        x = self.posenc(x)  # encode raw coordinates (lat/lon)
+        return self.nnet.forward_decomp(x)  # process the encoded features
