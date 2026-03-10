@@ -1,6 +1,6 @@
-# 🛰️ SatCLIP - A Global, General-Purpose Geographic Location Encoder [v. 2025.3.3]
+# 🛰️ SatCLIP - A Global, General-Purpose Geographic Location Encoder [2026.3.0.2]
 
-![CLIP](/figures/satclip.png)
+![CLIP](./resources/figures/satclip.png)
 
 _Overview of the pretraining and deployment pipeline for SatCLIP._
 
@@ -8,26 +8,81 @@ _Overview of the pretraining and deployment pipeline for SatCLIP._
 
 SatCLIP trains location and image encoders via contrastive learning, by matching images to their corresponding locations. This is analogous to the CLIP approach, which matches images to their corresponding text. Through this process, the location encoder learns characteristics of a location, as represented by satellite imagery. For more details, check out our [paper](https://arxiv.org/abs/2311.17179).
 
+## Installation
+
+This guide provides three methods to install Satclip, depending on your setup and needs.
+
+### Option 1: Install from Source (Local Repository)
+
+Use this if you're actively developing or working from a cloned repository.
+
+```bash
+# Clone the repository (if not already cloned)
+git clone https://github.com/your-org/satclip.git
+cd satclip
+
+# (Optional) Create and activate a virtual environment
+python -m venv .venv
+.\.venv\Scripts\activate  # On Windows
+# source .venv/bin/activate  # On Unix-based systems
+
+# Install the package and its dependencies
+pip install .
+```
+
+### Option 2: Install from PyPI (Pre-built Distribution) NOTE: NOT IMPLEMENTED YET!
+
+Use this if you want the latest stable release directly from PyPI.
+
+```bash
+pip install satclip
+```
+
+### Option 3: Use Conda Environment (Reproducible Setup)
+
+Recommended for strict dependency management or deployment environments.
+
+```bash
+# Create the environment from the provided YAML file
+conda env create -f ./resources/env.satclip.yaml
+
+# Activate the environment
+conda activate satclip
+```
+
 ## Overview
 
 Usage of SatCLIP is simple:
 
 ```python
-from model import *
-from location_encoder import *
+import torch
+
+from satclip.model import SatCLIP
 
 model = SatCLIP(
+    in_channels=13,
     embed_dim=512,
-    image_resolution=224, in_channels=13, vision_layers=4, vision_width=768, vision_patch_size=32, # Image encoder
-    le_type='sphericalharmonics', pe_type='siren', legendre_polys=10, frequency_num=16, max_radius=360, min_radius=1, harmonics_calculation='analytic'  # Location encoder
+    image_resolution=224,
+    n_channels=13,
+    vision_layers=4,
+    vision_width=768,
+    vision_patch_size=32,
+    le_type='sphericalharmonics',
+    pe_type='siren',
+    legendre_polys=10,
+    frequency_num=16,
+    max_radius=360,
+    min_radius=1,
+    harmonics_calculation='analytic',
 )
 
-img_batch = torch.randn(32, 13, 224, 224) # Represents a batch of 32 images
-loc_batch = torch.randn(32, 2) # Represents the corresponding 32 locations (lon/lat)
+img_batch = torch.randn(32, 13, 224, 224)  # Represents a batch of 32 images
+loc_batch = torch.randn(32, 2)  # Represents the corresponding 32 locations (lon/lat)
 
 with torch.no_grad():
     logits_per_image, logits_per_coord = model(img_batch, loc_batch)
     probs = logits_per_image.softmax(dim=-1).detach().cpu().numpy()
+
 ```
 
 ## Training
@@ -50,8 +105,7 @@ tar -xf satclip.tar
 Now, to train **SatCLIP** models, set the paths correctly, adapt training configs in `satclip/configs/default.yaml` and train SatCLIP by running:
 
 ```bash
-cd satclip
-python main.py
+satclip
 ```
 
 ### Use of the S2-100K dataset
@@ -73,19 +127,32 @@ We provide six pretrained SatCLIP models, trained with different vision encoders
 -   SatCLIP-ViT16-L10: `wget https://satclip.z13.web.core.windows.net/satclip/satclip-vit16-l10.ckpt`
 -   SatCLIP-ViT16-L40: `wget https://satclip.z13.web.core.windows.net/satclip/satclip-vit16-l40.ckpt`
 
-Usage of pretrained models is simple:
+Usage of pretrained models is simple (Note: All models are loaded by default in the CPU):
 
 ```python
-from load import get_satclip
+from satclip import load
 
-device = 'cuda'
+# Load the entire SatCLIP model
+model = load.get_satclip(r'C:\Users\bari_is\Documents\git\Haight3\Embedding\satclip\weights\satclip-vit16-l40.ckpt')
 
-c = torch.randn(32, 2) # Represents a batch of 32 locations (lon/lat)
+# Or Load only the location encoder
+l_encoder = load.load_location_encoder(r'C:\Users\bari_is\Documents\git\Haight3\Embedding\satclip\weights\satclip-vit16-l40.ckpt')
 
-model = get_satclip('path_to_satclip', device=device) #Only loads location encoder by default
+device = "cuda"
+
+model = model.to(device)
+l_encoder = l_encoder.to(device)
+
+c = torch.randn(32, 2)  # Represents a batch of 32 locations (lon/lat)
+img_batch = torch.randn(32, 13, 224, 224)  # Represents a batch of 32 images
+
 model.eval()
+l_encoder.eval()
+
 with torch.no_grad():
-  emb  = model(c.double().to(device)).detach().cpu()
+    logits_per_image, logits_per_coord = model(img_batch.double().to(device), c.double().to(device))
+    loc = l_encoder(c.double().to(device)).detach().cpu()
+
 ```
 
 You can also access SatCLIP model weights directly via [Hugging Face](https://huggingface.co/microsoft?search_models=satclip).

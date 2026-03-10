@@ -23,6 +23,8 @@ from satclip.model import SatCLIP
 
 torch.set_float32_matmul_precision("high")
 
+__main__ = ["SatCLIPLightningModule"]
+
 
 class SatCLIPLightningModule(lightning.pytorch.LightningModule):
     """
