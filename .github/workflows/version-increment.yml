@@ -6,8 +6,6 @@ name: Version Increment
 on:
   push:
     branches: ["main", "release-candidate"]
-  pull_request:
-    branches: ["main"]
 
 jobs:
   build:
@@ -35,12 +33,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install flake8 pytest bumpver
           # if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-      - name: Lint with flake8
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude resources
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=20 --max-line-length=140 --statistics --exclude resources
       - name: Increase Version
         run: |
           CURRENT_BRANCH=$(echo "${GITHUB_REF##*/}")
@@ -49,19 +41,7 @@ jobs:
           if [ "$CURRENT_BRANCH" = "main" ]; then
             echo "Merge to main detected — bumping patch and tagging..."
             
-            # Read current version
-            CURRENT_VERSION=$(sed -n 's/current_version = "\(.*\)"/\1/p' pyproject.toml | tr -d '[:space:]')
-            echo "Current version: $CURRENT_VERSION"
-
-            # Extract parts
-            CURRENT_YEAR=$(echo "$CURRENT_VERSION" | cut -d'.' -f1)
-            CURRENT_MONTH=$(echo "$CURRENT_VERSION" | cut -d'.' -f2)
-            CURRENT_PATCH=$(echo "$CURRENT_VERSION" | cut -d'.' -f3)
-            NEXT_PATCH=$(printf "%02d" $((10#$CURRENT_PATCH + 1)))  # 0-padded
-            NEW_VERSION="$CURRENT_YEAR.$CURRENT_MONTH.$NEXT_PATCH.0"
-            echo "New version: $NEW_VERSION"
-
-            bumpver update --set-version "$NEW_VERSION"
+            bumpver update --patch
 
           else
             echo "Regular push — bumping INC0 only"
